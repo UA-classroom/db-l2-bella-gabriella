@@ -23,7 +23,9 @@ def get_all_categories(connection):
         # Creates a cursor to run SQL commands
         # RealDictCursor turns the results into dictionarys (easier to read)
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute("SELECT * FROM categories;") # Run SQL ("Fetch everything from the table categories")
+            cursor.execute(
+            """SELECT * 
+            FROM categories;""") # Run SQL ("Fetch everything from the table categories")
             categories = cursor.fetchall() # Fetch all the results and saves it in the varible categories
         return categories # Returns the result
     
@@ -31,14 +33,19 @@ def get_all_categories(connection):
 def get_all_listings(connection):
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute("SELECT * FROM listings;")
+            cursor.execute(
+            """SELECT * 
+            FROM listings;""")
             listings = cursor.fetchall()
         return listings
     
 def get_listing_by_id(connection, listing_id): # Parameter: listing_id
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute("SELECT * FROM listings WHERE id = %s;", (listing_id,)) # %s: placeholder for listing_id
+            cursor.execute(
+            """SELECT * 
+            FROM listings 
+            WHERE id = %s;""", (listing_id,)) # %s: placeholder for listing_id
             listing = cursor.fetchone() # Fetch only one result (the first one)
         return listing
     
@@ -81,11 +88,47 @@ def update_listing(connection, listing_id, category_id=None, title=None, listing
         return updated_listing
     
 def delete_listing(connection, listing_id):
-        with connection:
-            with connection.cursor(cursor_factory=RealDictCursor) as cursor:
-                cursor.execute("DELETE FROM listings WHERE id = %s * RETURNING *;")
-                deleted_listing = cursor.fetchone()
-        return deleted_listing
+    """ Deletes a listing from the database """
+    with connection:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+            """DELETE FROM listings 
+            WHERE id = %s * RETURNING *;""")
+            deleted_listing = cursor.fetchone()
+    return deleted_listing
+
+# Listings_watch_list
+def get_all_watched_listings(connection, user_id):
+    with connection:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+            """SELECT * FROM listings_watch_list 
+            WHERE id = %s;""", (user_id,))
+            watched_listings = cursor.fetchall()
+        return watched_listings
+
+def add_to_watch_list(connection, user_id, listing_id):
+    with connection:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+            """INSERT INTO listings_watch_list (user_id, listing_id)
+            VALUES (%s, %s) RETURNING *;""",
+        )
+            new_watch_listing = cursor.fetchone()
+        return new_watch_listing
+    
+def remove_from_watch_list(connection, user_id, listing_id):
+    with connection:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+            """DELETE FROM listings_watch_list 
+            WHERE user_id AND listing_id = %s RETURNING *;""")
+            deleted_watch_listing = cursor.fetchone()
+        return deleted_watch_listing
+
+# Messages
+
+# Payments
 
 
 ### THIS IS JUST AN EXAMPLE OF A FUNCTION FOR INSPIRATION FOR A LIST-OPERATION (FETCHING MANY ENTRIES)
