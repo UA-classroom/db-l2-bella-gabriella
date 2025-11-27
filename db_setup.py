@@ -185,7 +185,7 @@ def create_tables():
     """
     )
 
-    # Notifications 
+    # Notifications - Gabriella
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "notifications" (
@@ -213,7 +213,7 @@ def create_tables():
     """
     )
 
-    # Listing comments
+    # Listing comments - Gabriella
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "listing_comments" (
@@ -228,7 +228,7 @@ def create_tables():
     """
     )
 
-    # Shipping details
+    # Shipping details - Gabriella
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "shipping_details" (
