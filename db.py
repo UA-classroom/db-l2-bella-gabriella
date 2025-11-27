@@ -17,6 +17,101 @@ start with a connection parameter.
 - E.g, if you decide to use psycopg3, you'd be able to directly use pydantic models with the cursor, these examples are however using psycopg2 and RealDictCursor
 """
 
+# Users
+def create_user(
+    con, username, email, password, user_since, date_of_birth, phone_number
+):
+    # open connection
+    with con:
+        # create cursor
+        with con.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+                INSERT INTO users (username, email, password, user_since, date_of_birth, phone_number) 
+                VALUES (%s, %s, %s, %s, %s, %s) 
+                RETURNING id;""",
+                (username, email, password, user_since, date_of_birth, phone_number)
+            )
+            # get id from dictionary
+            user_id = cursor.fetchone()["id"]
+        return user_id
+
+
+def get_user_by_id(con, user_id):
+    with con:
+        with con.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+            SELECT id, username, email, user_since, date_of_birth, phone_number 
+            FROM users 
+            WHERE id = %s""",
+                (user_id,)
+            )
+            user_by_id = cursor.fetchone()
+        return user_by_id
+
+
+# get user by email for login
+def get_user_by_email(con, email):
+    with con:
+        with con.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+            SELECT id, username, email, user_since, date_of_birth, phone_number 
+            FROM users 
+            WHERE email = %s""",
+                (email,)
+            )
+            user_by_email = cursor.fetchone()
+        return user_by_email
+
+
+# get user by username for login
+def get_user_by_username(con, username):
+    with con:
+        with con.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+            SELECT id, username, email, user_since, date_of_birth, phone_number 
+            FROM users 
+            WHERE username = %s""",
+                (username,)
+            )
+            user_by_username = cursor.fetchone()
+        return user_by_username
+
+
+def get_all_users(con):
+    with con:
+        with con.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute("SELECT * FROM users")
+            all_users = cursor.fetchall()
+        return all_users
+
+
+def update_user(con, user_id, email=None, phone_number=None):
+    with con:
+        with con.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+                UPDATE users 
+                SET email = COALESCE (%s, email),
+                    phone_number = COALESCE (%s, phone_number)
+                WHERE id = %s RETURNING *;
+                """,
+                (email, phone_number, user_id)
+            )
+            update_user = cursor.fetchone()
+        return update_user
+
+
+def delete_user(con, user_id):
+    with con:
+        with con.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute("DELETE FROM users WHERE id = %s RETURNING *;", (user_id,))
+            deleted_user = cursor.fetchone()
+            return deleted_user
+
 # Categories
 def get_all_categories(connection):
     with connection:
