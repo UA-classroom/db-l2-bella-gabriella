@@ -107,10 +107,10 @@ def create_tables():
         """
         CREATE TABLE IF NOT EXISTS "bids" (
             id BIGSERIAL PRIMARY KEY,
-            user_id BIGINT NOT NULL,
+            user_id BIGINT NOT NULL REFERENCES "users"(id),
             listing_id BIGINT NOT NULL REFERENCES "listings"(id),
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            bid_amount DECIMAL(10,2) NOT NULL
+            amount DECIMAL(10,2) NOT NULL
         );
     """
     )
@@ -150,7 +150,7 @@ def create_tables():
         """
         CREATE TABLE IF NOT EXISTS "images" (
             id BIGSERIAL PRIMARY KEY,
-            user_id BIGINT NOT NULL,
+            user_id BIGINT NOT NULL REFERENCES "users"(id),
             listing_id BIGINT NOT NULL REFERENCES "listings"(id), 
             image_url VARCHAR(500) NOT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -163,20 +163,20 @@ def create_tables():
         """
         CREATE TABLE IF NOT EXISTS "user_ratings" (
             id BIGSERIAL PRIMARY KEY,
-            user_id BIGINT NOT NULL,
+            user_id BIGINT NOT NULL REFERENCES "users"(id),
             total_ratings INT NOT NULL DEFAULT 0,
             average_rating DECIMAL(3,2) NOT NULL DEFAULT 0.00
         );
     """
     )
 
-    #Reviews
+    # Reviews
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "reviews" (
             id BIGSERIAL PRIMARY KEY,
-            reviewer_id BIGINT NOT NULL,
-            reviewed_user_id BIGINT NOT NULL,
+            reviewer_id BIGINT NOT NULL REFERENCES "users"(id),
+            reviewed_user_id BIGINT NOT NULL REFERENCES "users"(id),
             listing_id BIGINT NOT NULL REFERENCES "listings"(id),
             rating INT NOT NULL,
             review_text TEXT,
@@ -205,7 +205,7 @@ def create_tables():
         """
         CREATE TABLE IF NOT EXISTS "reports" (
             id BIGSERIAL PRIMARY KEY,
-            user_id BIGINT NOT NULL,
+            user_id BIGINT NOT NULL REFERENCES "users"(id),
             listing_id BIGINT NOT NULL REFERENCES "listings"(id),
             report_reason TEXT NOT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
