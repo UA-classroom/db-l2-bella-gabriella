@@ -79,10 +79,10 @@ def create_tables():
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "listings_watch_list" (
-            id BIGSERIAL PRIMARY KEY,
             user_id BIGINT NOT NULL REFERENCES "users"(id),
             listing_id BIGINT NOT NULL REFERENCES "listings"(id),
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            PRIMARY KEY (user_id, listing_id) -- Composite key --
         );
     """
     )
