@@ -65,11 +65,11 @@ def create_tables():
             category_id BIGINT NOT NULL REFERENCES "categories"(id),
             title VARCHAR(100) NOT NULL,
             image_url VARCHAR(500),
-            listing_type VARCHAR(255),
+            listing_type VARCHAR(255) NOT NULL CHECK (listing_type IN ('buying', 'selling', 'free')),
             price DECIMAL(10, 2) NOT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             region VARCHAR(255) NOT NULL,
-            status VARCHAR(255) NOT NULL,
+            status VARCHAR(255) NOT NULL CHECK (status IN ('active', 'sold', 'closed')),
             description TEXT NOT NULL
         );
     """
@@ -138,7 +138,7 @@ def create_tables():
             transaction_id BIGINT NOT NULL REFERENCES "transactions"(id), 
             listing_id BIGINT NOT NULL REFERENCES "listings"(id),     
             payment_method VARCHAR(50) NOT NULL,
-            payment_status VARCHAR(50) NOT NULL,
+            payment_status VARCHAR(50) NOT NULL CHECK (payment_status IN ('pending', 'completed', 'failed', 'cancelled', 'refunded')),
             amount DECIMAL(10, 2) NOT NULL,
             paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
