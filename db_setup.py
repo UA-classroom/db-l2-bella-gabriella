@@ -8,6 +8,7 @@ load_dotenv(override=True)
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 PASSWORD = os.getenv("PASSWORD")
 
+
 def get_connection():
     """
     Function that returns a single connection
@@ -23,6 +24,7 @@ def get_connection():
         port="5432",
     )
 
+
 def create_tables():
     """
     Creates database tables for the Tradera application
@@ -30,7 +32,7 @@ def create_tables():
     """
     connection = get_connection()
     cursor = connection.cursor()
-    
+
     # Users - Gabriella
     cursor.execute(
         """
@@ -81,7 +83,7 @@ def create_tables():
         CREATE TABLE IF NOT EXISTS "listings_watch_list" (
             user_id BIGINT NOT NULL REFERENCES "users"(id),
             listing_id BIGINT NOT NULL REFERENCES "listings"(id),
-            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (user_id, listing_id) -- Composite key --
         );
     """
@@ -101,7 +103,7 @@ def create_tables():
         );
     """
     )
-    
+
     # Bids
     cursor.execute(
         """
@@ -114,7 +116,7 @@ def create_tables():
         );
     """
     )
-    
+
     # Transactions - Gabriella
     cursor.execute(
         """
@@ -239,6 +241,7 @@ def create_tables():
             shipping_cost DECIMAL(10,2) NOT NULL,
             estimated_delivery_days INT,
             tracking_number VARCHAR(100),
+            status VARCHAR(50),
             shipped_at TIMESTAMP
         );
     """
