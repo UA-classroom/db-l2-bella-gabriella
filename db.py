@@ -17,7 +17,6 @@ start with a connection parameter.
 - E.g, if you decide to use psycopg3, you'd be able to directly use pydantic models with the cursor, these examples are however using psycopg2 and RealDictCursor
 """
 
-
 # Users
 def create_user(connection, username, email, password, user_since, date_of_birth, phone_number):
     # open connection
@@ -190,6 +189,7 @@ def create_listing(
             new_listing = cursor.fetchone()  # Fetch only one result (the first one)
         return new_listing
 
+
 def update_listing(
     connection,
     listing_id,
@@ -241,7 +241,7 @@ def delete_listing(connection, listing_id):
             cursor.execute(
                 """DELETE 
                 FROM listings 
-                WHERE id = %s * RETURNING *;""",
+                WHERE id = %s RETURNING *;""",
                 (listing_id,)
             )
             deleted_listing = cursor.fetchone()
@@ -286,6 +286,7 @@ def remove_from_watch_list(connection, user_id, listing_id):
             deleted_watch_listing = cursor.fetchone()
         return deleted_watch_listing
 
+
 # Messages
 def get_all_user_messages(connection, user_id):
     """ Fetches all messages for a specific user """
@@ -294,11 +295,12 @@ def get_all_user_messages(connection, user_id):
             cursor.execute(
                 """SELECT * 
                 FROM messages 
-                WHERE sender_id OR recipent_id = %s;)""",
+                WHERE sender_id= %s OR recipent_id = %s;)""",
                 (user_id, user_id)
             )
             messages = cursor.fetchall()
         return messages
+
 
 def create_message(connection, sender_id, recipient_id, listing_id, message_text):
     with connection:
@@ -311,19 +313,65 @@ def create_message(connection, sender_id, recipient_id, listing_id, message_text
             new_message = cursor.fetchone()
         return new_message
 
+
 def delete_message(connection, message_id):
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 """DELETE 
                 FROM messages 
-                WHERE id = %s * RETURNING *;""",
+                WHERE id = %s RETURNING *;""",
                 (message_id,)
             )
             deleted_message = cursor.fetchone()
     return deleted_message
 
+
 # Payments
+def get_all_user_payments(connection, user_id):
+    with connection:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """SELECT * 
+                FROM payments 
+                WHERE transaction_id 
+                IN (SELECT id FROM transactions WHERE user_id = %s);""",
+                (user_id,)
+            )
+            payments = cursor.fetchall()
+    return payments
+
+
+def create_payment(
+        connection, 
+        transaction_id, 
+        listing_id, 
+        payment_method, 
+        payment_status, 
+        amount):
+    with connection:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """INSERT INTO payments 
+                (transaction_id, listing_id, payment_method, payment_status, amount) 
+                VALUES (%s, %s, %s, %s, %s) RETURNING *;""",
+                (transaction_id, listing_id, payment_method, payment_status, amount)
+            )
+            new_payment = cursor.fetchone()
+    return new_payment
+
+
+def request_refund(connection, payment_id):
+    with connection:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """UPDATE payments 
+                SET payment_status = %s 
+                WHERE id = %s RETURNING *;""",
+                ('refund_requested', payment_id)
+            )
+            refund_request = cursor.fetchone()
+    return refund_request
 
 
 # Transactions
