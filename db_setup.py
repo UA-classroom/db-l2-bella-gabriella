@@ -1,5 +1,4 @@
 import os
-
 import psycopg2
 from dotenv import load_dotenv
 
@@ -7,7 +6,6 @@ load_dotenv(override=True)
 
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 PASSWORD = os.getenv("PASSWORD")
-
 
 def get_connection():
     """
@@ -24,7 +22,6 @@ def get_connection():
         port="5432",
     )
 
-
 def create_tables():
     """
     Creates database tables for the Tradera application
@@ -33,7 +30,7 @@ def create_tables():
     connection = get_connection()
     cursor = connection.cursor()
 
-    # Users - Gabriella
+    # Users
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "users" (
@@ -48,7 +45,7 @@ def create_tables():
     """
     )
 
-    # Categories - Bella
+    # Categories
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "categories" (
@@ -58,7 +55,7 @@ def create_tables():
     """
     )
 
-    # Listings - Bella
+    # Listings
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "listings" (
@@ -77,7 +74,7 @@ def create_tables():
     """
     )
 
-    # Listings watch list - Bella
+    # Listings watch list
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "listings_watch_list" (
@@ -89,7 +86,7 @@ def create_tables():
     """
     )
 
-    # Messages - Bella
+    # Messages
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "messages" (
@@ -117,7 +114,7 @@ def create_tables():
     """
     )
 
-    # Transactions - Gabriella
+    # Transactions
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "transactions" (
@@ -132,7 +129,7 @@ def create_tables():
     """
     )
 
-    # Payments - Bella
+    # Payments
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "payments" (
@@ -140,7 +137,7 @@ def create_tables():
             transaction_id BIGINT NOT NULL REFERENCES "transactions"(id), 
             listing_id BIGINT NOT NULL REFERENCES "listings"(id),     
             payment_method VARCHAR(50) NOT NULL,
-            payment_status VARCHAR(50) NOT NULL CHECK (payment_status IN ('pending', 'completed', 'failed', 'cancelled', 'refunded')),
+            payment_status VARCHAR(50) NOT NULL CHECK (payment_status IN ('pending', 'completed', 'failed', 'cancelled', 'refunded', 'refund_requested')),
             amount DECIMAL(10, 2) NOT NULL,
             paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
@@ -187,7 +184,7 @@ def create_tables():
     """
     )
 
-    # Notifications - Gabriella
+    # Notifications
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "notifications" (
@@ -215,7 +212,7 @@ def create_tables():
     """
     )
 
-    # Listing comments - Gabriella
+    # Listing comments
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "listing_comments" (
@@ -230,7 +227,7 @@ def create_tables():
     """
     )
 
-    # Shipping details - Gabriella
+    # Shipping details
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "shipping_details" (
@@ -250,7 +247,6 @@ def create_tables():
     connection.commit()
     cursor.close()
     connection.close()
-
 
 if __name__ == "__main__":
     # Only reason to execute this file would be to create new tables, meaning it serves a migration file
