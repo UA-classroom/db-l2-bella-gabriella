@@ -19,9 +19,7 @@ start with a connection parameter.
 
 
 # Users
-def create_user(
-    connection, username, email, password, user_since, date_of_birth, phone_number
-):
+def create_user(connection, username, email, password, user_since, date_of_birth, phone_number):
     # open connection
     with connection:
         # create cursor
@@ -122,10 +120,10 @@ def get_all_categories(connection):
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 """SELECT * 
-            FROM categories;"""
+                FROM categories;"""
             )  # Run SQL ("Fetch everything from the table categories")
             categories = (
-                cursor.fetchall()
+            cursor.fetchall()
             )  # Fetch all the results and saves it in the varible categories
         return categories  # Returns the result
 
@@ -136,7 +134,7 @@ def get_all_listings(connection):
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 """SELECT * 
-            FROM listings;"""
+                FROM listings;"""
             )
             listings = cursor.fetchall()
         return listings
@@ -147,8 +145,8 @@ def get_listing_by_id(connection, listing_id):  # Parameter: listing_id
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 """SELECT * 
-            FROM listings 
-            WHERE id = %s;""",
+                FROM listings 
+                WHERE id = %s;""",
                 (listing_id,),
             )  # %s: placeholder for listing_id
             listing = cursor.fetchone()  # Fetch only one result (the first one)
@@ -167,7 +165,7 @@ def create_listing(
     description,
     image_url=None,
 ):
-    """Creates a new listing in the database"""
+    """ Creates a new listing in the database """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -192,7 +190,6 @@ def create_listing(
             new_listing = cursor.fetchone()  # Fetch only one result (the first one)
         return new_listing
 
-
 def update_listing(
     connection,
     listing_id,
@@ -205,7 +202,7 @@ def update_listing(
     description=None,
     image_url=None,
 ):
-    """Updates an existing listing with the values that the user choose"""
+    """ Updates an existing listing with the values that the user choose """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -238,12 +235,14 @@ def update_listing(
 
 
 def delete_listing(connection, listing_id):
-    """Deletes a listing from the database"""
+    """ Deletes a listing from the database """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
-                """DELETE FROM listings 
-            WHERE id = %s * RETURNING *;"""
+                """DELETE 
+                FROM listings 
+                WHERE id = %s * RETURNING *;""",
+                (listing_id,)
             )
             deleted_listing = cursor.fetchone()
     return deleted_listing
@@ -254,8 +253,9 @@ def get_all_watched_listings(connection, user_id):
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
-                """SELECT * FROM listings_watch_list 
-            WHERE user_id = %s;""",
+                """SELECT * 
+                FROM listings_watch_list 
+                WHERE user_id = %s;""",
                 (user_id,),
             )
             watched_listings = cursor.fetchall()
@@ -267,7 +267,7 @@ def add_to_watch_list(connection, user_id, listing_id):
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 """INSERT INTO listings_watch_list (user_id, listing_id)
-            VALUES (%s, %s) RETURNING *;""",
+                VALUES (%s, %s) RETURNING *;""",
                 (user_id, listing_id),
             )
             new_watch_listing = cursor.fetchone()
@@ -278,20 +278,55 @@ def remove_from_watch_list(connection, user_id, listing_id):
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
-                """DELETE FROM listings_watch_list 
-            WHERE user_id = %s AND listing_id = %s RETURNING *;""",
-            (user_id, listing_id),
+                """DELETE 
+                FROM listings_watch_list 
+                WHERE user_id = %s AND listing_id = %s RETURNING *;""",
+                (user_id, listing_id),
             )
             deleted_watch_listing = cursor.fetchone()
         return deleted_watch_listing
 
-
 # Messages
+def get_all_user_messages(connection, user_id):
+    """ Fetches all messages for a specific user """
+    with connection:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """SELECT * 
+                FROM messages 
+                WHERE sender_id OR recipent_id = %s;)""",
+                (user_id, user_id)
+            )
+            messages = cursor.fetchall()
+        return messages
+
+def create_message(connection, sender_id, recipient_id, listing_id, message_text):
+    with connection:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """INSERT INTO messages (sender_id, recipient_id, listing_id, message_text)
+                VALUES (%s, %s, %s, %s) RETURNING *;""",
+                (sender_id, recipient_id, listing_id, message_text)
+            )
+            new_message = cursor.fetchone()
+        return new_message
+
+def delete_message(connection, message_id):
+    with connection:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """DELETE 
+                FROM messages 
+                WHERE id = %s * RETURNING *;""",
+                (message_id,)
+            )
+            deleted_message = cursor.fetchone()
+    return deleted_message
 
 # Payments
 
 
-# Transactions - Gabriella
+# Transactions
 def create_transaction(connection, user_id, listing_id, amount, status, bid_id=None):
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -357,7 +392,7 @@ def update_transaction(connection, transaction_id, new_status):
         return updated_transaction
 
 
-# Shipping_details - Gabriella
+# Shipping_details
 def create_shipping_details(
     connection,
     user_id,
@@ -424,7 +459,7 @@ def update_shipping_tracking(
         return updated_shipping
 
 
-# Notifications - Gabriella
+# Notifications
 def create_notification(
     connection, user_id, listing_id, notification_type, notification_message
 ):
@@ -494,7 +529,7 @@ def delete_notification(connection, notification_id):
             return deleted_notification
 
 
-# Listing_comments - Gabriella
+# Listing_comments
 def create_listing_comment(connection, user_id, listing_id, comment_text):
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
