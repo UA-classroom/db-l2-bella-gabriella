@@ -242,10 +242,35 @@ def delete_listing(connection, listing_id):
                 """DELETE 
                 FROM listings 
                 WHERE id = %s RETURNING *;""",
-                (listing_id,)
+                (listing_id,),
             )
             deleted_listing = cursor.fetchone()
     return deleted_listing
+
+
+def search_listings(connection, search_term):
+    with connection:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """SELECT * FROM listings 
+                WHERE title ILIKE %s OR description ILIKE %s;""",
+                (f"%{search_term}%", f"%{search_term}%")
+            )
+            searched_listings = cursor.fetchall()
+    return searched_listings
+
+
+def get_listings_by_category(connection, category_id):
+    with connection:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """SELECT * 
+                FROM listings 
+                WHERE category_id = %s;""",
+                (category_id,),
+            )
+            listings_by_category = cursor.fetchall()
+    return listings_by_category
 
 
 # Listings_watch_list
@@ -295,11 +320,24 @@ def get_all_user_messages(connection, user_id):
             cursor.execute(
                 """SELECT * 
                 FROM messages 
-                WHERE sender_id= %s OR recipent_id = %s;)""",
+                WHERE sender_id= %s OR recipient_id = %s;""",
                 (user_id, user_id)
             )
             messages = cursor.fetchall()
         return messages
+
+
+def get_message_by_id(connection, message_id):
+    with connection:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """SELECT * 
+                FROM messages 
+                WHERE id = %s;""",
+                (message_id,),
+            )
+            message = cursor.fetchone()
+        return message
 
 
 def create_message(connection, sender_id, recipient_id, listing_id, message_text):
@@ -321,7 +359,7 @@ def delete_message(connection, message_id):
                 """DELETE 
                 FROM messages 
                 WHERE id = %s RETURNING *;""",
-                (message_id,)
+                (message_id,),
             )
             deleted_message = cursor.fetchone()
     return deleted_message
@@ -336,10 +374,23 @@ def get_all_user_payments(connection, user_id):
                 FROM payments 
                 WHERE transaction_id 
                 IN (SELECT id FROM transactions WHERE user_id = %s);""",
-                (user_id,)
+                (user_id,),
             )
             payments = cursor.fetchall()
     return payments
+
+
+def get_payment_by_id(connection, payment_id):
+    with connection:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """SELECT * 
+                FROM payments 
+                WHERE id = %s;""",
+                (payment_id,),
+            ) 
+            payment = cursor.fetchone()
+        return payment
 
 
 def create_payment(
