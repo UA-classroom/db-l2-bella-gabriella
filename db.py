@@ -615,7 +615,7 @@ def delete_bid(connection, bid_id):
     return delete_bid
 
 
-# User Ratings
+# User_ratings
 def create_user_rating(connection, user_id, total_ratings=0, average_rating=0.00):
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -874,8 +874,8 @@ def create_report(connection, user_id, listing_id, report_reason):
                 INSERT INTO reports (user_id, listing_id, report_reason)
                 VALUES (%s, %s, %s)
                 RETURNING *;
-            """,
-                (user_id, listing_id, report_reason),
+                """,
+                (user_id, listing_id, report_reason)
             )
             new_report = cursor.fetchone()
     return new_report
