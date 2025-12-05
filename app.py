@@ -109,7 +109,7 @@ def create_user_rating(
         )
         return new_rating
     except Exception as error:
-        raise HTTPException(status_code=500, detail="Error, could not create rating.")
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 @app.get("/user-ratings")
 def get_all_user_ratings():
@@ -125,9 +125,13 @@ def get_user_rating(user_id: int):
     try:
         connection = get_connection()
         user_rating = db.get_user_rating_by_user_id(connection, user_id)
+        if user_rating is None:
+            raise HTTPException(status_code=404, detail="Rating not found.")
         return user_rating
-    except Exception as error:
-        raise HTTPException(status_code=500, detail="Something went wrong.")
+    except HTTPException: # 
+        raise
+    except Exception as error: # 
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 @app.put("/users/{user_id}/rating")
 def update_user_rating(
@@ -135,20 +139,27 @@ def update_user_rating(
     try:
         connection = get_connection()
         updated_rating = db.update_user_rating(
-            connection, user_id, total_ratings, average_rating
-        )
+            connection, user_id, total_ratings, average_rating)
+        if updated_rating is None:
+            raise HTTPException(status_code=404, detail="Rating not found.")
         return updated_rating
-    except Exception as error:
-        raise HTTPException(status_code=500, detail="Error, could not update rating.")
+    except HTTPException: 
+        raise
+    except Exception as error: 
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 @app.delete("/users/{user_id}/rating")
 def delete_user_rating(user_id: int):
     try:
         connection = get_connection()
-        result = db.delete_user_rating(connection, user_id)
-        return result
-    except Exception as error:
-        raise HTTPException(status_code=500, detail="Something went wrong.")
+        deleted_rating = db.delete_user_rating(connection, user_id)
+        if deleted_rating is None:
+            raise HTTPException(status_code=404, detail="Rating not found.")
+        return deleted_rating
+    except HTTPException: 
+        raise
+    except Exception as error: 
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 # Reviews
 @app.post("/reviews", status_code=201)
@@ -166,7 +177,7 @@ def create_review(
         )
         return new_review
     except Exception as error:
-        raise HTTPException(status_code=500, detail="Error, could not create review.")
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 @app.get("/reviews")
 def get_all_reviews():
@@ -175,16 +186,20 @@ def get_all_reviews():
         all_reviews = db.get_all_reviews(connection)
         return {"reviews": all_reviews}
     except Exception as error:
-        raise HTTPException(status_code=500, detail="Something went wrong.")
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 @app.get("/reviews/{review_id}")
 def get_review(review_id: int):
     try:
         connection = get_connection()
-        review = db.get_review_by_id(connection, review_id)
-        return review
+        review_by_id = db.get_review_by_id(connection, review_id)
+        if review_by_id is None:
+            raise HTTPException(status_code=404, detail="Review not found.")
+        return review_by_id
+    except HTTPException: 
+        raise
     except Exception as error:
-        raise HTTPException(status_code=500, detail="Something went wrong.")
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 @app.get("/users/{user_id}/reviews")
 def get_reviews_for_user(user_id: int):
@@ -193,63 +208,20 @@ def get_reviews_for_user(user_id: int):
         reviews_for_user = db.get_reviews_for_user(connection, user_id)
         return {"reviews": reviews_for_user}
     except Exception as error:
-        raise HTTPException(status_code=500, detail="Something went wrong.")
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 @app.delete("/reviews/{review_id}")
 def delete_review(review_id: int):
     try:
         connection = get_connection()
         deleted_review = db.delete_review(connection, review_id)
+        if deleted_review is None:
+            raise HTTPException(status_code=404, detail="Review not found.")
         return deleted_review
+    except HTTPException: 
+        raise
     except Exception as error:
-        raise HTTPException(status_code=500, detail="Something went wrong.")
-
-# Images
-@app.post("/images", status_code=201)
-def create_image(user_id: int, listing_id: int, image_url: str):
-    try:
-        connection = get_connection()
-        new_image = db.create_image(connection, user_id, listing_id, image_url)
-        return new_image
-    except Exception as error:
-        raise HTTPException(status_code=500, detail="Error, could not create image.")
-
-@app.get("/images")
-def get_all_images():
-    """Hämtar alla bilder"""
-    try:
-        connection = get_connection()
-        all_images = db.get_all_images(connection)
-        return {"images": all_images}
-    except Exception as error:
-        raise HTTPException(status_code=500, detail="Something went wrong.")
-
-@app.get("/images/{image_id}")
-def get_image(image_id: int):
-    try:
-        connection = get_connection()
-        image = db.get_image_by_id(connection, image_id)
-        return image
-    except Exception as error:
-        raise HTTPException(status_code=500, detail="Something went wrong.")
-
-@app.get("/listings/{listing_id}/images")
-def get_images_for_listing(listing_id: int):
-    try:
-        connection = get_connection()
-        images_for_listing = db.get_images_for_listing(connection, listing_id)
-        return {"images": images_for_listing}
-    except Exception as error:
-        raise HTTPException(status_code=500, detail="Something went wrong.")
-
-@app.delete("/images/{image_id}")
-def delete_image(image_id: int):
-    try:
-        connection = get_connection()
-        deleted_image = db.delete_image(connection, image_id)
-        return deleted_image
-    except Exception as error:
-        raise HTTPException(status_code=500, detail="Something went wrong.")
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 # Reports
 @app.post("/reports", status_code=201)
@@ -259,7 +231,7 @@ def create_report(user_id: int, listing_id: int, report_reason: str):
         new_report = db.create_report(connection, user_id, listing_id, report_reason)
         return new_report
     except Exception as error:
-        raise HTTPException(status_code=500, detail="Error, could not create report.")
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 @app.get("/reports")
 def get_all_reports():
@@ -268,16 +240,20 @@ def get_all_reports():
         all_reports = db.get_all_reports(connection)
         return {"reports": all_reports}
     except Exception as error:
-        raise HTTPException(status_code=500, detail="Something went wrong.")
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 @app.get("/reports/{report_id}")
 def get_report(report_id: int):
     try:
         connection = get_connection()
-        report = db.get_report_by_id(connection, report_id)
-        return report
+        report_by_id = db.get_report_by_id(connection, report_id)
+        if report_by_id is None:
+            raise HTTPException(status_code=404, detail="Report not found.")
+        return report_by_id
+    except HTTPException:
+        raise
     except Exception as error:
-        raise HTTPException(status_code=500, detail="Something went wrong.")
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 @app.get("/listings/{listing_id}/reports")
 def get_reports_for_listing(listing_id: int):
@@ -286,13 +262,67 @@ def get_reports_for_listing(listing_id: int):
         reports_for_listing = db.get_reports_for_listing(connection, listing_id)
         return {"reports": reports_for_listing}
     except Exception as error:
-        raise HTTPException(status_code=500, detail="Something went wrong.")
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 @app.delete("/reports/{report_id}")
 def delete_report(report_id: int):
     try:
         connection = get_connection()
         deleted_report = db.delete_report(connection, report_id)
+        if deleted_report is None:
+            raise HTTPException(status_code=404, detail="Report not found.")
         return deleted_report
+    except HTTPException:
+        raise
     except Exception as error:
-        raise HTTPException(status_code=500, detail="Something went wrong.")
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+# Images
+@app.post("/images", status_code=201)
+def create_image(user_id: int, listing_id: int, image_url: str):
+    try:
+        connection = get_connection()
+        new_image = db.create_image(connection, user_id, listing_id, image_url)
+        return new_image
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+@app.get("/images")
+def get_all_images():
+    try:
+        connection = get_connection()
+        all_images = db.get_all_images(connection)
+        return {"images": all_images}
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+@app.get("/images/{image_id}")
+def get_image(image_id: int):
+    try:
+        connection = get_connection()
+        image_by_id = db.get_image_by_id(connection, image_id)
+        if image_by_id is None:
+            raise HTTPException(status_code=404, detail="Image not found.")
+        return image_by_id
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+@app.get("/listings/{listing_id}/images")
+def get_images_for_listing(listing_id: int):
+    try:
+        connection = get_connection()
+        images_for_listing = db.get_images_for_listing(connection, listing_id)
+        return {"images": images_for_listing}
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+@app.delete("/images/{image_id}")
+def delete_image(image_id: int):
+    try:
+        connection = get_connection()
+        deleted_image = db.delete_image(connection, image_id)
+        return deleted_image
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
