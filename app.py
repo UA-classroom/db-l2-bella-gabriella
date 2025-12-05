@@ -43,6 +43,23 @@ but will have different HTTP-verbs.
 # Listings_watch_list
 
 # Payments
+@app.post("/payments", status_code=201)
+def create_payment(transaction_id: int, listing_id: int, payment_method: str, payment_status: str, amount: float):
+    try:
+        connection = get_connection()
+        new_payment = db.create_payment(connection, transaction_id, listing_id, payment_method, payment_status, amount)
+        return new_payment
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+@app.get("/payments")
+def get_all_payments():
+    try:
+        connection = get_connection()
+        all_payments = db.get_all_payments(connection)
+        return {"payments": all_payments}
+    except HTTPException as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 # Bids
 @app.post("/bids", status_code=201)
@@ -58,8 +75,8 @@ def create_bid(user_id: int, listing_id: int, bid_amount: float):
 def get_all_bids():
     try:
         connection = get_connection() 
-        bids = db.get_all_bids(connection)
-        return {"bids": bids}
+        all_bids = db.get_all_bids(connection)
+        return {"all_": all_bids}
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
@@ -100,8 +117,7 @@ def delete_bid(bid_id: int):
 
 # User_ratings
 @app.post("/user-ratings", status_code=201)
-def create_user_rating(
-    user_id: int, total_ratings: int = 0, average_rating: float = 0.00):
+def create_user_rating(user_id: int, total_ratings: int = 0, average_rating: float = 0.00):
     try:
         connection = get_connection()
         new_rating = db.create_user_rating(
