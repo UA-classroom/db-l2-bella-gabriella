@@ -65,7 +65,7 @@ def create_tables():
             title VARCHAR(100) NOT NULL,
             image_url VARCHAR(500),
             listing_type VARCHAR(255) NOT NULL CHECK (listing_type IN ('buying', 'selling', 'free')),
-            price DECIMAL(10, 2) NOT NULL,
+            price DECIMAL(10, 2) NOT NULL CHECK (price > 0),
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             region VARCHAR(255) NOT NULL,
             status VARCHAR(255) NOT NULL CHECK (status IN ('active', 'sold', 'closed')),
