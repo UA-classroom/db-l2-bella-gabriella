@@ -36,15 +36,6 @@ but will have different HTTP-verbs.
 #     item_id = add_item_validation(con, item)
 #     return {"item_id": item_id}
 
-# Categories
-
-# Listings
-
-# Messages
-
-# Listings_watch_list
-
-
 # Users
 @app.post("/users", status_code=201)
 def create_user(
@@ -358,6 +349,13 @@ def delete_listing_comment(comment_id: int):
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
+# Categories
+
+# Listings
+
+# Messages
+
+# Listings_watch_list
 
 # Payments
 @app.post("/payments", status_code=201)
@@ -382,7 +380,6 @@ def create_payment(
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
-
 @app.get("/payments")
 def get_all_payments():
     try:
@@ -392,6 +389,40 @@ def get_all_payments():
     except HTTPException as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
+@app.get("/payments/{user_id}")
+def get_user_payments(user_id: int):
+    try:
+        connection = get_connection()
+        user_payments = db.get_all_user_payments(connection, user_id)
+        return {"payments": user_payments}
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+@app.get("/payments/{payment_id}")
+def get_payment_by_id(payment_id: int):
+    try:
+        connection = get_connection()
+        payment_by_id = db.get_payment_by_id(connection, payment_id)
+        if payment_by_id is None:
+            raise HTTPException(status_code=404, detail=" Payment not found.")
+        return payment_by_id
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+@app.put("/payments{payment_id}/refund")
+def request_refund(payment_id: int):
+    try:
+        connection = get_connection()
+        refund_request = db.request_refund(connection, payment_id)
+        if refund_request is None:
+            raise HTTPException(status_code=404, detail="Payment not found.")
+        return refund_request
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 # Bids
 @app.post("/bids", status_code=201)
@@ -411,7 +442,7 @@ def get_all_bids():
     try:
         connection = get_connection()
         all_bids = db.get_all_bids(connection)
-        return {"all_": all_bids}
+        return {"bids": all_bids}
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
