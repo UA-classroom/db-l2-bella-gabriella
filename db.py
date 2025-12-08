@@ -117,6 +117,7 @@ def delete_user(connection, user_id):
 
 # Categories
 def get_all_categories(connection):
+    """ Returns all categories """
     with connection:
         # Create a cursor to run SQL commands
         # RealDictCursor turn the results into dictionarys
@@ -132,6 +133,7 @@ def get_all_categories(connection):
 
 
 def get_category_by_id(connection, category_id):
+    """ Returns a category with a specific id """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -140,11 +142,10 @@ def get_category_by_id(connection, category_id):
                 FROM categories 
                 WHERE id = %s;
                 """,
-                (category_id,),
+                (category_id,)
             )
             category_by_id = cursor.fetchone()
-
-        if not category_by_id:
+        if category_by_id is None:
             raise ValueError(f"Category with id {category_id} not found.")
     return category_by_id
 
@@ -162,7 +163,7 @@ def create_listing(
     description,
     image_url=None,
 ):
-    """Creates a new listing in the database"""
+    """ Creates a new listing in the database """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(  # Run SQL ("Insert a new listing with these values")
@@ -191,6 +192,7 @@ def create_listing(
 
 
 def get_all_listings(connection):
+    """ Returns all listings """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -204,6 +206,7 @@ def get_all_listings(connection):
 
 
 def get_listing_by_id(connection, listing_id):
+    """ Returns a listing with a specific id """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -212,12 +215,11 @@ def get_listing_by_id(connection, listing_id):
                 FROM listings 
                 WHERE id = %s;
                 """,
-                (listing_id,),
+                (listing_id,)
             )  # %s: placeholder for listing_id
             listing_by_id = cursor.fetchone()
-
-    if not listing_by_id:
-        raise ValueError(f"Listing with id {listing_id} not found.")
+        if listing_by_id is None:
+            raise ValueError(f"Listing with id {listing_id} not found.")
     return listing_by_id
 
 
@@ -233,7 +235,7 @@ def update_listing(
     description=None,
     image_url=None,
 ):
-    """Updates an existing listing with the values that the user choose"""
+    """ Updates an existing listing with the values that the user choose """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -254,7 +256,6 @@ def update_listing(
                 RETURNING *;
                 """,
                 (
-                    listing_id,
                     category_id,
                     title,
                     listing_type,
@@ -263,6 +264,7 @@ def update_listing(
                     status,
                     description,
                     image_url,
+                    listing_id,
                 ),
             )
             updated_listing = cursor.fetchone()
@@ -279,11 +281,10 @@ def delete_listing(connection, listing_id):
                 WHERE id = %s 
                 RETURNING *;
                 """,
-                (listing_id,),
+                (listing_id,)
             )
             deleted_listing = cursor.fetchone()
-
-        if not deleted_listing:
+        if deleted_listing is None:
             raise ValueError(f"Listing with id {listing_id} not found.")
     return deleted_listing
 
@@ -295,15 +296,16 @@ def search_listings(connection, search_term):
                 """
                 SELECT * 
                 FROM listings 
-                WHERE title ILIKE %s OR description ILIKE %s;
+                WHERE title ILIKE %s OR description ILIKE %s; -- ILIKE: makes the search case-insensitive --
                 """,
-                (f"%{search_term}%", f"%{search_term}%"),
+                (f"%{search_term}%", f"%{search_term}%"), # %{search_term}%: search anywhere in the text
             )
             searched_listings = cursor.fetchall()
     return searched_listings
 
 
 def get_listings_by_category(connection, category_id):
+    """ Returns all listings with a specific category """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -312,28 +314,13 @@ def get_listings_by_category(connection, category_id):
                 FROM listings 
                 WHERE category_id = %s;
                 """,
-                (category_id,),
+                (category_id,)
             )
             listings_by_category = cursor.fetchall()
     return listings_by_category
 
 
 # Listings_watch_list
-def get_all_watched_listings(connection, user_id):
-    with connection:
-        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(
-                """
-                SELECT * 
-                FROM listings_watch_list 
-                WHERE user_id = %s;
-                """,
-                (user_id,),
-            )
-            watched_listings = cursor.fetchall()
-        return watched_listings
-
-
 def add_to_watch_list(connection, user_id, listing_id):
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
@@ -343,10 +330,25 @@ def add_to_watch_list(connection, user_id, listing_id):
                 VALUES (%s, %s) 
                 RETURNING *;
                 """,
-                (user_id, listing_id),
+                (user_id, listing_id)
             )
             new_watch_listing = cursor.fetchone()
         return new_watch_listing
+
+
+def get_all_watched_listings(connection, user_id):
+    with connection:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+                SELECT * 
+                FROM listings_watch_list 
+                WHERE user_id = %s;
+                """,
+                (user_id,)
+            )
+            watched_listings = cursor.fetchall()
+        return watched_listings
 
 
 def remove_from_watch_list(connection, user_id, listing_id):
@@ -359,7 +361,7 @@ def remove_from_watch_list(connection, user_id, listing_id):
                 WHERE user_id = %s AND listing_id = %s 
                 RETURNING *;
                 """,
-                (user_id, listing_id),
+                (user_id, listing_id)
             )
             deleted_watch_listing = cursor.fetchone()
         return deleted_watch_listing
@@ -375,7 +377,7 @@ def create_message(connection, sender_id, recipient_id, listing_id, message_text
                 VALUES (%s, %s, %s, %s) 
                 RETURNING *;
                 """,
-                (sender_id, recipient_id, listing_id, message_text),
+                (sender_id, recipient_id, listing_id, message_text)
             )
             new_message = cursor.fetchone()
         return new_message
@@ -395,7 +397,7 @@ def get_all_messages(connection):
 
 
 def get_all_user_messages(connection, user_id):
-    """Fetches all messages for a specific user"""
+    """ Returns all messages for a specific user """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -404,13 +406,14 @@ def get_all_user_messages(connection, user_id):
                 FROM messages 
                 WHERE sender_id= %s OR recipient_id = %s;
                 """,
-                (user_id, user_id),
+                (user_id, user_id)
             )
             user_messages = cursor.fetchall()
         return user_messages
 
 
 def get_message_by_id(connection, message_id):
+    """ Returns a message with a specific id """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -419,11 +422,10 @@ def get_message_by_id(connection, message_id):
                 FROM messages 
                 WHERE id = %s;
                 """,
-                (message_id,),
+                (message_id,)
             )
             message_by_id = cursor.fetchone()
-
-        if not message_by_id:
+        if message_by_id is None:
             raise ValueError(f"Message with id {message_id} not found.")
     return message_by_id
 
@@ -437,11 +439,10 @@ def delete_message(connection, message_id):
                 FROM messages 
                 WHERE id = %s RETURNING *;
                 """,
-                (message_id,),
+                (message_id,)
             )
             deleted_message = cursor.fetchone()
-
-        if not deleted_message:
+        if deleted_message is None:
             raise ValueError(f"Message with id {message_id} not found.")
     return deleted_message
 
@@ -466,6 +467,7 @@ def create_payment(
 
 
 def get_all_payments(connection):
+    """ Returns all payments """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -479,6 +481,7 @@ def get_all_payments(connection):
 
 
 def get_all_user_payments(connection, user_id):
+    """ Returns all payments for a specific user """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -488,13 +491,14 @@ def get_all_user_payments(connection, user_id):
                 WHERE transaction_id 
                 IN (SELECT id FROM transactions WHERE user_id = %s);
                 """,
-                (user_id,),
+                (user_id,)
             )
             payments = cursor.fetchall()
     return payments
 
 
 def get_payment_by_id(connection, payment_id):
+    """ Returns a payment with a specific id """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -503,13 +507,12 @@ def get_payment_by_id(connection, payment_id):
                 FROM payments 
                 WHERE id = %s;
                 """,
-                (payment_id,),
+                (payment_id,)
             )
             payment_by_id = cursor.fetchone()
-
-            if not payment_by_id:
-                raise ValueError(f"Payment with id {payment_id} not found.")
-        return payment_by_id
+        if payment_by_id is None:
+            raise ValueError(f"Payment with id {payment_id} not found.")
+    return payment_by_id
 
 
 def request_refund(connection, payment_id):
@@ -522,7 +525,7 @@ def request_refund(connection, payment_id):
                 WHERE id = %s 
                 RETURNING *;
                 """,
-                ("refund_requested", payment_id),
+                ("refund_requested", payment_id)
             )
             refund_request = cursor.fetchone()
     return refund_request
@@ -538,13 +541,14 @@ def create_bid(connection, user_id, listing_id, bid_amount):
                 VALUES (%s, %s, %s)
                 RETURNING *; 
                 """,
-                (user_id, listing_id, bid_amount),
+                (user_id, listing_id, bid_amount)
             )
             new_bid = cursor.fetchone()
     return new_bid
 
 
 def get_all_bids(connection):
+    """ Returns all bids """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -559,6 +563,7 @@ def get_all_bids(connection):
 
 
 def get_bid_by_id(connection, bid_id):
+    """ Returns a bid with a specific id """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -567,16 +572,16 @@ def get_bid_by_id(connection, bid_id):
                 FROM bids 
                 WHERE id = %s;
                 """,
-                (bid_id,),
+                (bid_id,)
             )
             bid_by_id = cursor.fetchone()
-
-    if not bid_by_id:
-        raise ValueError(f"Bid with id {bid_id} not found.")
+        if bid_by_id is None:
+            raise ValueError(f"Bid with id {bid_id} not found.")
     return bid_by_id
 
 
 def get_bids_for_listing(connection, listing_id):
+    """ Returns all bids for a listing """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -586,7 +591,7 @@ def get_bids_for_listing(connection, listing_id):
                 WHERE listing_id = %s 
                 ORDER BY bid_amount DESC;
                 """,
-                (listing_id,),
+                (listing_id,)
             )
             bids_for_listing = cursor.fetchall()
     return bids_for_listing
@@ -602,12 +607,11 @@ def delete_bid(connection, bid_id):
                 WHERE id = %s 
                 RETURNING id;
                 """,
-                (bid_id,),
+                (bid_id,)
             )
             deleted_bid = cursor.fetchone()
-
-    if not deleted_bid:
-        raise ValueError(f"Bid with id {bid_id} not found.")
+        if deleted_bid is None:
+            raise ValueError(f"Bid with id {bid_id} not found.")
     return delete_bid
 
 
@@ -621,13 +625,14 @@ def create_user_rating(connection, user_id, total_ratings=0, average_rating=0.00
                 VALUES (%s, %s, %s)
                 RETURNING *;
                 """,
-                (user_id, total_ratings, average_rating),
+                (user_id, total_ratings, average_rating)
             )
             new_rating = cursor.fetchone()
     return new_rating
 
 
 def get_all_user_ratings(connection):
+    """ Returns all user ratings """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -641,6 +646,7 @@ def get_all_user_ratings(connection):
 
 
 def get_user_rating_by_user_id(connection, user_id):
+    """ Returns user rating for a specific user """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -649,12 +655,11 @@ def get_user_rating_by_user_id(connection, user_id):
                 FROM user_ratings 
                 WHERE user_id = %s;
                 """,
-                (user_id,),
+                (user_id,)
             )
             rating_by_user_id = cursor.fetchone()
-
-    if not rating_by_user_id:
-        raise ValueError(f"Rating for user {user_id} not found.")
+        if rating_by_user_id is None:
+            raise ValueError(f"Rating for user {user_id} not found.")
     return rating_by_user_id
 
 
@@ -668,12 +673,11 @@ def update_user_rating(connection, user_id, average_rating, total_ratings):
                 WHERE user_id = %s 
                 RETURNING *;
                 """,
-                (average_rating, total_ratings, user_id),
+                (average_rating, total_ratings, user_id)
             )
             updated_rating = cursor.fetchone()
-
-    if not updated_rating:
-        raise ValueError(f"Rating for user {user_id} not found.")
+        if updated_rating is None:
+            raise ValueError(f"Rating for user {user_id} not found.")
     return updated_rating
 
 
@@ -687,19 +691,17 @@ def delete_user_rating(connection, user_id):
                 WHERE user_id = %s 
                 RETURNING id;
                 """,
-                (user_id,),
+                (user_id,)
             )
             deleted_rating = cursor.fetchone()
-
-    if not deleted_rating:
-        raise ValueError(f"Rating for user {user_id} not found.")
+        if deleted_rating is None:
+            raise ValueError(f"Rating for user {user_id} not found.")
     return deleted_rating
 
 
 # Reviews
 def create_review(
-    connection, reviewer_id, reviewed_user_id, listing_id, rating, review_text=None
-):
+    connection, reviewer_id, reviewed_user_id, listing_id, rating, review_text=None):
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -708,13 +710,14 @@ def create_review(
                 VALUES (%s, %s, %s, %s, %s)
                 RETURNING *;
                 """,
-                (reviewer_id, reviewed_user_id, listing_id, rating, review_text),
+                (reviewer_id, reviewed_user_id, listing_id, rating, review_text)
             )
             new_review = cursor.fetchone()
     return new_review
 
 
 def get_all_reviews(conncection):
+    """ Returns all reviews """
     with conncection:
         with conncection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -729,6 +732,7 @@ def get_all_reviews(conncection):
 
 
 def get_review_by_id(connection, review_id):
+    """ Returns a review with a specific id """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -736,16 +740,16 @@ def get_review_by_id(connection, review_id):
                 SELECT * 
                 FROM reviews 
                 WHERE id = %s;""",
-                (review_id,),
+                (review_id,)
             )
             review_by_id = cursor.fetchone()
-
-    if not review_by_id:
-        raise ValueError(f"Review with id {review_id} not found.")
+        if review_by_id is None:
+            raise ValueError(f"Review with id {review_id} not found.")
     return review_by_id
 
 
 def get_reviews_for_user(connection, user_id):
+    """ Returns all the reviews for a specific user """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -755,7 +759,7 @@ def get_reviews_for_user(connection, user_id):
                 WHERE reviewed_user_id = %s 
                 ORDER BY created_at DESC;
                 """,
-                (user_id,),
+                (user_id,)
             )
             reviews_for_user = cursor.fetchall()
     return reviews_for_user
@@ -770,11 +774,10 @@ def delete_review(connection, review_id):
                 WHERE id = %s 
                 RETURNING id;
                 """,
-                (review_id,),
+                (review_id,)
             )
             deleted_review = cursor.fetchone()
-
-        if not deleted_review:
+        if deleted_review is None:
             raise ValueError(f"Review with id {review_id} not found.")
     return deleted_review
 
@@ -789,13 +792,14 @@ def create_report(connection, user_id, listing_id, report_reason):
                 VALUES (%s, %s, %s)
                 RETURNING *;
                 """,
-                (user_id, listing_id, report_reason),
+                (user_id, listing_id, report_reason)
             )
             new_report = cursor.fetchone()
     return new_report
 
 
 def get_all_reports(connection):
+    """ Returns all reports """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -809,6 +813,7 @@ def get_all_reports(connection):
 
 
 def get_report_by_id(connection, report_id):
+    """ Returns a report with a specific id """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -817,16 +822,16 @@ def get_report_by_id(connection, report_id):
                 FROM reports 
                 WHERE id = %s;
                 """,
-                (report_id,),
+                (report_id,)
             )
             report_by_id = cursor.fetchone()
-
-    if not report_by_id:
-        raise ValueError(f"Report with id {report_id} not found.")
+        if report_by_id is None:
+            raise ValueError(f"Report with id {report_id} not found.")
     return report_by_id
 
 
 def get_reports_for_listing(connection, listing_id):
+    """ Returns all the reports for a listing """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -835,7 +840,7 @@ def get_reports_for_listing(connection, listing_id):
                 WHERE listing_id = %s 
                 ORDER BY created_at DESC;
                 """,
-                (listing_id,),
+                (listing_id,)
             )
             reports_for_listing = cursor.fetchall()
     return reports_for_listing
@@ -851,11 +856,10 @@ def delete_report(connection, report_id):
                 WHERE id = %s 
                 RETURNING id;
                 """,
-                (report_id,),
+                (report_id,)
             )
             deleted_report = cursor.fetchone()
-
-    if not deleted_report:
+    if deleted_report is None:
         raise ValueError(f"Report with id {report_id} not found.")
     return deleted_report
 
@@ -870,13 +874,14 @@ def create_image(connection, user_id, listing_id, image_url):
                 VALUES (%s, %s, %s)
                 RETURNING *;
                 """,
-                (user_id, listing_id, image_url),
+                (user_id, listing_id, image_url)
             )
             new_image = cursor.fetchone()
     return new_image
 
 
 def get_all_images(connection):
+    """ Returns all images """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -891,6 +896,7 @@ def get_all_images(connection):
 
 
 def get_image_by_id(connection, image_id):
+    """ Returns an image with a specific id """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -899,17 +905,16 @@ def get_image_by_id(connection, image_id):
                 FROM images 
                 WHERE id = %s;
                 """,
-                (image_id,),
+                (image_id,)
             )
             image_by_id = cursor.fetchone()
-
-    if not image_by_id:
+    if image_by_id is None:
         raise ValueError(f"Image with id {image_id} not found.")
     return image_by_id
 
 
 def get_images_for_listing(connection, listing_id):
-    """Gets all the images for a listing"""
+    """ Returns all the images for a listing """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -918,7 +923,7 @@ def get_images_for_listing(connection, listing_id):
                 WHERE listing_id = %s 
                 ORDER BY created_at ASC
                 """,
-                (listing_id,),
+                (listing_id,)
             )
             images_for_listing = cursor.fetchall()
     return images_for_listing
@@ -934,13 +939,12 @@ def delete_image(connection, image_id):
                 WHERE id = %s 
                 RETURNING id;
                 """,
-                (image_id,),
+                (image_id,)
             )
             deleted_image = cursor.fetchone()
-
-    if not deleted_image:
+    if deleted_image is None:
         raise ValueError(f"Image with id {image_id} not found.")
-    return delete_image
+    return deleted_image
 
 
 # Transactions
