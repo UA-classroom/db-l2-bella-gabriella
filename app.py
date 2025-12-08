@@ -12,7 +12,7 @@ app = FastAPI()
 ADD ENDPOINTS FOR FASTAPI HERE
 Make sure to do the following:
 - Use the correct HTTP method (e.g get, post, put, delete)
-- Use correct STATUS CODES, e.g 200, 400, 401 etc. when returning a result to the user
+- Use correct STATUS CODES, e.g 200, 400, 404 etc. when returning a result to the user
 - Use pydantic models whenever you receive user data and need to validate the structure and data types (VG)
 This means you need some error handling that determine what should be returned to the user
 Read more: https://www.geeksforgeeks.org/10-most-common-http-status-codes/
@@ -349,13 +349,265 @@ def delete_listing_comment(comment_id: int):
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
+
 # Categories
+@app.get("/categories")
+def get_all_categories():
+    try:
+        connection = get_connection()
+        categories = db.get_all_categories(connection)
+        return categories
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+
+@app.get("/categories/{category_id}")
+def get_category_by_id(category_id: int):
+    try:
+        connection = get_connection()
+        category_by_id = db.get_category_by_id(connection, category_id)
+        if category_by_id is None:
+            raise HTTPException(status_code=404, detail="Category not found.")
+        return category_by_id
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
 
 # Listings
+@app.post("/listings", status_code=201)
+def create_listing(
+    user_id: int,
+    category_id: int,
+    title: str,
+    listing_type: str,
+    price: float,
+    region: str,
+    status: str,
+    description: str,
+    image_url: str = None
+):
+    try:
+        connection = get_connection()
+        new_listing = db.create_listing(
+            connection,
+            user_id,
+            category_id,
+            title,
+            listing_type,
+            price,
+            region,
+            status,
+            description,
+            image_url
+        )
+        return new_listing
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
-# Messages
+
+@app.get("/listings")
+def get_all_listings():
+    try:
+        connection = get_connection()
+        all_listings = db.get_all_listings(connection)
+        return {"listings": all_listings}
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+
+@app.get("/listings/{listing_id}")
+def get_listing_by_id(listing_id: int):
+    try:
+        connection = get_connection()
+        listing_by_id = db.get_listing_by_id(connection, listing_id)
+        if listing_by_id is None:
+            raise HTTPException(status_code=404, detail="Listing not found.")
+        return listing_by_id
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+
+@app.update("/listings/{listing_id}")
+def update_listing(
+    listing_id: int,
+    category_id: int = None,
+    title: str = None,
+    listing_type: str = None,
+    price: float = None,
+    region: str = None,
+    status: str = None,
+    description: str = None,
+    image_url: str = None
+):
+    try:
+        connection = get_connection()
+        updated_listing = db.update_listing(
+            connection,
+            listing_id,
+            category_id,
+            title,
+            listing_type,
+            price,
+            region,
+            status,
+            description,
+            image_url
+        )
+        if updated_listing is None:
+            raise HTTPException(status_code=404, detail="Listing not found.")
+        return updated_listing
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+
+@app.delete("/listings/{listing_id}")
+def delete_listing(listing_id: int):
+    try:
+        connection = get_connection()
+        deleted_listing = db.delete_listing(connection, listing_id)
+        if deleted_listing is None:
+            raise HTTPException(status_code=404, detail="Listing not found.")
+        return deleted_listing
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+
+@app.get("/listings/search")
+def search_listings(search_term: str):
+    try:
+        connection = get_connection()
+        searched_listings = db.search_listings(connection, search_term)
+        return searched_listings
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+
+@app.get("/listings/{category_id}")
+def get_listings_by_category(category_id: int):
+    try:
+        connection = get_connection()
+        listings_by_category = db.get_listings_by_category(connection, category_id)
+        return listings_by_category
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
 
 # Listings_watch_list
+@app.post("/listings_watch_list", status_code=201)
+def add_to_watch_list(user_id: int, listing_id: int):
+    try:
+        connection = get_connection()
+        new_watch_listing = db.add_to_watch_list(connection, user_id, listing_id)
+        if new_watch_listing is None:
+            raise HTTPException(status_code=404, detail="Listing not found.")
+        return new_watch_listing
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+
+@app.get("/listings_watch_list/{user_id}")
+def get_all_watched_listings_for_user(user_id: int):
+    try:
+        connection = get_connection()
+        watched_listings = db.get_all_watched_listings(connection, user_id)
+        return {"listings_watch_list": watched_listings}
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+
+@app.delete("/listings_watch_list/{user_id}/{listing_id}")
+def delete_watch_listing(user_id: int, listing_id: int):
+    try:
+        connection = get_connection()
+        removed_watch_listing = db.remove_from_watch_list(connection, user_id, listing_id)
+        if removed_watch_listing is None:
+            raise HTTPException(status_code=404, detail="Listing not found.")
+        return removed_watch_listing
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+
+# Messages
+@app.post("/messages", status_code=201)
+def create_message(
+    sender_id: int,
+    recipent_id: int,
+    listing_id: int,
+    message_text: str
+):
+    try:
+        connection = get_connection()
+        new_message = db.create_message(
+            connection,
+            sender_id,
+            recipent_id,
+            listing_id,
+            message_text
+        )
+        return new_message
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+
+@app.get("/messages")
+def get_all_messages():
+    try:
+        connection = get_connection()
+        all_messages = db.get_all_messages(connection)
+        return {"messages": all_messages}
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+
+@app.get("/messages/{user_id}")
+def get_user_messages(user_id: int):
+    try:
+        connection = get_connection()
+        user_messages = db.get_all_user_messages(connection, user_id)
+        return {"messages": user_messages}
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+
+@app.get("/messages/{message_id}")
+def get_message_by_id(message_id: int):
+    try:
+        connection = get_connection()
+        message_by_id = db.get_message_by_id(connection, message_id)
+        if message_by_id is None:
+            raise HTTPException(status_code=404, detail="Message not found.")
+        return message_by_id
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+
+@app.delete("/messages/{message_id}")
+def delete_message(message_id: int):
+    try:
+        connection = get_connection()
+        deleted_message = db.delete_message(connection, message_id)
+        if deleted_message is None:
+            raise HTTPException(status_code=404, detail="Message not found.")
+        return deleted_message
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
 
 # Payments
 @app.post("/payments", status_code=201)
@@ -374,11 +626,12 @@ def create_payment(
             listing_id,
             payment_method,
             payment_status,
-            amount,
+            amount
         )
         return new_payment
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
 
 @app.get("/payments")
 def get_all_payments():
@@ -389,6 +642,7 @@ def get_all_payments():
     except HTTPException as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
+
 @app.get("/payments/{user_id}")
 def get_user_payments(user_id: int):
     try:
@@ -397,6 +651,7 @@ def get_user_payments(user_id: int):
         return {"payments": user_payments}
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
 
 @app.get("/payments/{payment_id}")
 def get_payment_by_id(payment_id: int):
@@ -411,6 +666,7 @@ def get_payment_by_id(payment_id: int):
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
+
 @app.put("/payments{payment_id}/refund")
 def request_refund(payment_id: int):
     try:
@@ -423,6 +679,7 @@ def request_refund(payment_id: int):
         raise
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
 
 # Bids
 @app.post("/bids", status_code=201)
