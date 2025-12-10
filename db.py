@@ -3,21 +3,9 @@ from fastapi import HTTPException
 from psycopg2.extras import RealDictCursor
 
 """
-This file is responsible for making database queries, which your fastapi endpoints/routes can use.
-The reason we split them up is to avoid clutter in the endpoints, so that the endpoints might focus on other tasks 
-
-- Try to return results with cursor.fetchall() or cursor.fetchone() when possible
-- Make sure you always give the user response if something went right or wrong, sometimes 
-you might need to use the RETURNING keyword to garantuee that something went right / wrong
-e.g when making DELETE or UPDATE queries
-- No need to use a class here
-- Try to raise exceptions to make them more reusable and work a lot with returns
-- You will need to decide which parameters each function should receive. All functions 
-start with a connection parameter.
-- Below, a few inspirational functions exist - feel free to completely ignore how they are structured
-- E.g, if you decide to use psycopg3, you'd be able to directly use pydantic models with the cursor, these examples are however using psycopg2 and RealDictCursor
+This file contains database functions for FastAPI endpoints.
+Each function execute queries, returns the result and handles exceptions when necessary. 
 """
-
 
 # Users
 def create_user(
@@ -166,7 +154,7 @@ def create_listing(
     """ Creates a new listing in the database """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute(  # Run SQL ("Insert a new listing with these values")
+            cursor.execute( # Run SQL ("Insert a new listing with these values")
                 """
                 INSERT INTO listings 
                 (user_id, category_id, title, listing_type, price, region, status, description, image_url)
@@ -185,9 +173,9 @@ def create_listing(
                     status,
                     description,
                     image_url,
-                ),  # Sending all the values
+                ) # Sending all the values
             )
-            new_listing = cursor.fetchone()  # Fetch only one result (the first one)
+            new_listing = cursor.fetchone() # Fetch only one result (the first one)
         return new_listing
 
 
@@ -235,7 +223,7 @@ def update_listing(
     description=None,
     image_url=None,
 ):
-    """ Updates an existing listing with the values that the user choose """
+    """ Partially updates a listing with the given values, keeping the other values unchanged """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -265,7 +253,7 @@ def update_listing(
                     description,
                     image_url,
                     listing_id,
-                ),
+                )
             )
             updated_listing = cursor.fetchone()
         return updated_listing
@@ -290,15 +278,17 @@ def delete_listing(connection, listing_id):
 
 
 def search_listings(connection, search_term):
+    """ Searches listings by title and description """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
+                # ILIKE: makes the search case-insensitive
                 """
                 SELECT * 
                 FROM listings 
-                WHERE title ILIKE %s OR description ILIKE %s; -- ILIKE: makes the search case-insensitive --
+                WHERE title ILIKE %s OR description ILIKE %s;
                 """,
-                (f"%{search_term}%", f"%{search_term}%"), # %{search_term}%: search anywhere in the text
+                (f"%{search_term}%", f"%{search_term}%") # %{search_term}%: search anywhere in the text
             )
             searched_listings = cursor.fetchall()
     return searched_listings
@@ -337,6 +327,7 @@ def add_to_watch_list(connection, user_id, listing_id):
 
 
 def get_all_watched_listings(connection, user_id):
+    """ Returns all watched_listing for a specific user """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -384,6 +375,7 @@ def create_message(connection, sender_id, recipient_id, listing_id, message_text
 
 
 def get_all_messages(connection):
+    """ Returns all messages """
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
@@ -460,7 +452,7 @@ def create_payment(
                 VALUES (%s, %s, %s, %s, %s) 
                 RETURNING *;
                 """,
-                (transaction_id, listing_id, payment_method, payment_status, amount),
+                (transaction_id, listing_id, payment_method, payment_status, amount)
             )
             new_payment = cursor.fetchone()
     return new_payment
@@ -700,8 +692,7 @@ def delete_user_rating(connection, user_id):
 
 
 # Reviews
-def create_review(
-    connection, reviewer_id, reviewed_user_id, listing_id, rating, review_text=None):
+def create_review(connection, reviewer_id, reviewed_user_id, listing_id, rating, review_text=None):
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
