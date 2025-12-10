@@ -9,32 +9,8 @@ from db_setup import get_connection
 app = FastAPI()
 
 """
-ADD ENDPOINTS FOR FASTAPI HERE
-Make sure to do the following:
-- Use the correct HTTP method (e.g get, post, put, delete)
-- Use correct STATUS CODES, e.g 200, 400, 404 etc. when returning a result to the user
-- Use pydantic models whenever you receive user data and need to validate the structure and data types (VG)
-This means you need some error handling that determine what should be returned to the user
-Read more: https://www.geeksforgeeks.org/10-most-common-http-status-codes/
-- Use correct URL paths the resource, e.g some endpoints should be located at the exact same URL, 
-but will have different HTTP-verbs.
+Endpoints for FastAPI
 """
-
-
-# INSPIRATION FOR A LIST-ENDPOINT - Not necessary to use pydantic models, but we could to ascertain that we return the correct values
-# @app.get("/items/")
-# def read_items():
-#     con = get_connection()
-#     items = get_items(con)
-#     return {"items": items}
-
-
-# INSPIRATION FOR A POST-ENDPOINT, uses a pydantic model to validate
-# @app.post("/validation_items/")
-# def create_item_validation(item: ItemCreate):
-#     con = get_connection()
-#     item_id = add_item_validation(con, item)
-#     return {"item_id": item_id}
 
 # Users
 @app.post("/users", status_code=201)
@@ -298,7 +274,7 @@ def update_shipping(
 
 
 # Listing_comments
-@app.post("/listing-comments", status_code=201)
+@app.post("/listing_comments", status_code=201)
 def create_listing_comment(user_id: int, listing_id: int, comment_text: str):
     try:
         connection = get_connection()
@@ -431,7 +407,8 @@ def get_listing_by_id(listing_id: int):
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 
-@app.update("/listings/{listing_id}")
+# Testa ev detta: int | None
+@app.patch("/listings/{listing_id}")
 def update_listing(
     listing_id: int,
     category_id: int = None,
@@ -532,7 +509,7 @@ def delete_watch_listing(user_id: int, listing_id: int):
         removed_watch_listing = db.remove_from_watch_list(connection, user_id, listing_id)
         if removed_watch_listing is None:
             raise HTTPException(status_code=404, detail="Listing not found.")
-        return removed_watch_listing
+        return {"message": f"Listing with id {listing_id} removed from watch list."}
     except HTTPException:
         raise
     except Exception as error:
@@ -602,7 +579,7 @@ def delete_message(message_id: int):
         deleted_message = db.delete_message(connection, message_id)
         if deleted_message is None:
             raise HTTPException(status_code=404, detail="Message not found.")
-        return deleted_message
+        return {"message": f"Message with id {message_id} successfully deleted."}
     except HTTPException:
         raise
     except Exception as error:
@@ -667,7 +644,7 @@ def get_payment_by_id(payment_id: int):
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 
-@app.put("/payments{payment_id}/refund")
+@app.put("/payments/{payment_id}/refund")
 def request_refund(payment_id: int):
     try:
         connection = get_connection()
@@ -685,10 +662,9 @@ def request_refund(payment_id: int):
 @app.post("/bids", status_code=201)
 def create_bid(user_id: int, listing_id: int, bid_amount: float):
     try:
-        connection = get_connection()  # Get database connection
+        connection = get_connection()
         new_bid = db.create_bid(
-            connection, user_id, listing_id, bid_amount
-        )  # Call the function from the database
+            connection, user_id, listing_id, bid_amount) 
         return new_bid
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
@@ -712,9 +688,9 @@ def get_bid_by_id(bid_id: int):
         if bid_by_id is None:
             raise HTTPException(status_code=404, detail="Bid not found.")
         return bid_by_id
-    except HTTPException:  # Catch the 404-HTTPException
+    except HTTPException:
         raise
-    except Exception as error:  # Catch unexpected errors
+    except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 
@@ -723,9 +699,7 @@ def get_bids_for_listing(listing_id: int):
     try:
         connection = get_connection()
         bids_for_listing = db.get_bids_for_listing(connection, listing_id)
-        return {
-            "bids": bids_for_listing
-        }  # If a listing has no bids it returns an empty list
+        return {"bids": bids_for_listing}  # If a listing has no bids it returns an empty list
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
@@ -747,13 +721,10 @@ def delete_bid(bid_id: int):
 # User_ratings
 @app.post("/user-ratings", status_code=201)
 def create_user_rating(
-    user_id: int, total_ratings: int = 0, average_rating: float = 0.00
-):
+    user_id: int, total_ratings: int = 0, average_rating: float = 0.00):
     try:
         connection = get_connection()
-        new_rating = db.create_user_rating(
-            connection, user_id, total_ratings, average_rating
-        )
+        new_rating = db.create_user_rating(connection, user_id, total_ratings, average_rating)
         return new_rating
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
@@ -785,13 +756,10 @@ def get_user_rating(user_id: int):
 
 @app.put("/users/{user_id}/rating")
 def update_user_rating(
-    user_id: int, total_ratings: int = None, average_rating: float = None
-):
+    user_id: int, total_ratings: int = None, average_rating: float = None):
     try:
         connection = get_connection()
-        updated_rating = db.update_user_rating(
-            connection, user_id, total_ratings, average_rating
-        )
+        updated_rating = db.update_user_rating(connection, user_id, total_ratings, average_rating)
         if updated_rating is None:
             raise HTTPException(status_code=404, detail="Rating not found.")
         return updated_rating
@@ -827,7 +795,12 @@ def create_review(
     try:
         connection = get_connection()
         new_review = db.create_review(
-            connection, reviewer_id, reviewed_user_id, listing_id, rating, review_text
+            connection, 
+            reviewer_id, 
+            reviewed_user_id, 
+            listing_id, 
+            rating, 
+            review_text
         )
         return new_review
     except Exception as error:
