@@ -74,7 +74,7 @@ def create_tables():
     """
     )
 
-    # Listings watch list
+    # Listings_watch_list
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "listings_watch_list" (
@@ -157,7 +157,7 @@ def create_tables():
     """
     )
 
-    # User ratings
+    # User_ratings
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "user_ratings" (
@@ -212,7 +212,7 @@ def create_tables():
     """
     )
 
-    # Listing comments
+    # Listing_comments
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "listing_comments" (
@@ -227,7 +227,7 @@ def create_tables():
     """
     )
 
-    # Shipping details
+    # Shipping_details
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS "shipping_details" (
