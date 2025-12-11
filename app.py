@@ -18,7 +18,6 @@ def create_user(
     username: str,
     email: str,
     password: str,
-    user_since: str,
     date_of_birth: str,
     phone_number: str,
 ):
@@ -30,7 +29,6 @@ def create_user(
             username,
             email,
             password,
-            user_since,
             date_of_birth,
             phone_number,
         )
@@ -360,7 +358,6 @@ def create_listing(
     listing_type: str,
     price: float,
     region: str,
-    status: str,
     description: str,
     image_url: str = None
 ):
@@ -374,7 +371,6 @@ def create_listing(
             listing_type,
             price,
             region,
-            status,
             description,
             image_url
         )
@@ -389,6 +385,16 @@ def get_all_listings():
         connection = get_connection()
         all_listings = db.get_all_listings(connection)
         return {"listings": all_listings}
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+
+@app.get("/listings/search")
+def search_listings(search_term: str):
+    try:
+        connection = get_connection()
+        searched_listings = db.search_listings(connection, search_term)
+        return searched_listings
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
@@ -416,7 +422,6 @@ def update_listing(
     listing_type: str = None,
     price: float = None,
     region: str = None,
-    status: str = None,
     description: str = None,
     image_url: str = None
 ):
@@ -430,7 +435,6 @@ def update_listing(
             listing_type,
             price,
             region,
-            status,
             description,
             image_url
         )
@@ -450,24 +454,17 @@ def delete_listing(listing_id: int):
         deleted_listing = db.delete_listing(connection, listing_id)
         if deleted_listing is None:
             raise HTTPException(status_code=404, detail="Listing not found.")
-        return deleted_listing
+        return {
+            "message": f"Listing with listing id {listing_id} deleted.",
+            "deleted_listing": deleted_listing
+        }
     except HTTPException:
         raise
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 
-@app.get("/listings/search")
-def search_listings(search_term: str):
-    try:
-        connection = get_connection()
-        searched_listings = db.search_listings(connection, search_term)
-        return searched_listings
-    except Exception as error:
-        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
-
-
-@app.get("/listings/{category_id}")
+@app.get("/listings/categories/{category_id}")
 def get_listings_by_category(category_id: int):
     try:
         connection = get_connection()
@@ -548,7 +545,7 @@ def get_all_messages():
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 
-@app.get("/messages/{user_id}")
+@app.get("/users/{user_id}/messages")
 def get_user_messages(user_id: int):
     try:
         connection = get_connection()
@@ -579,7 +576,7 @@ def delete_message(message_id: int):
         deleted_message = db.delete_message(connection, message_id)
         if deleted_message is None:
             raise HTTPException(status_code=404, detail="Message not found.")
-        return {"message": f"Message with id {message_id} successfully deleted."}
+        return {"message": f"Message with id {message_id} deleted."}
     except HTTPException:
         raise
     except Exception as error:
@@ -592,7 +589,6 @@ def create_payment(
     transaction_id: int,
     listing_id: int,
     payment_method: str,
-    payment_status: str,
     amount: float,
 ):
     try:
@@ -602,7 +598,6 @@ def create_payment(
             transaction_id,
             listing_id,
             payment_method,
-            payment_status,
             amount
         )
         return new_payment
@@ -620,7 +615,7 @@ def get_all_payments():
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 
-@app.get("/payments/{user_id}")
+@app.get("/users/{user_id}/payments")
 def get_user_payments(user_id: int):
     try:
         connection = get_connection()
@@ -658,13 +653,27 @@ def request_refund(payment_id: int):
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
 
 
+@app.delete("/payments/{payment_id}")
+def delete_payment(payment_id: int):
+    try:
+        connection = get_connection()
+        deleted_payment = db.delete_payment(connection, payment_id)
+        if deleted_payment is None:
+            raise HTTPException(status_code=404, detail="Payment not found.")
+        return {"message": f"Payment with id {payment_id} deleted."}
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
+
+
 # Bids
 @app.post("/bids", status_code=201)
-def create_bid(user_id: int, listing_id: int, bid_amount: float):
+def create_bid(user_id: int, listing_id: int, amount: float):
     try:
         connection = get_connection()
         new_bid = db.create_bid(
-            connection, user_id, listing_id, bid_amount) 
+            connection, user_id, listing_id, amount) 
         return new_bid
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")
@@ -711,7 +720,7 @@ def delete_bid(bid_id: int):
         deleted_bid = db.delete_bid(connection, bid_id)
         if deleted_bid is None:
             raise HTTPException(status_code=404, detail="Bid not found.")
-        return deleted_bid
+        return {"message": f"Bid with id {bid_id} deleted."}
     except HTTPException:
         raise
     except Exception as error:
@@ -776,7 +785,10 @@ def delete_user_rating(user_id: int):
         deleted_rating = db.delete_user_rating(connection, user_id)
         if deleted_rating is None:
             raise HTTPException(status_code=404, detail="Rating not found.")
-        return deleted_rating
+        return {
+            "message": f"Rating for user {user_id} deleted.",
+            "deleted_rating": deleted_rating
+        }
     except HTTPException:
         raise
     except Exception as error:
@@ -848,7 +860,10 @@ def delete_review(review_id: int):
         deleted_review = db.delete_review(connection, review_id)
         if deleted_review is None:
             raise HTTPException(status_code=404, detail="Review not found.")
-        return deleted_review
+        return {
+            "message": f"Review with id {review_id} deleted.",
+            "deleted_review": deleted_review
+        }
     except HTTPException:
         raise
     except Exception as error:
@@ -907,7 +922,10 @@ def delete_report(report_id: int):
         deleted_report = db.delete_report(connection, report_id)
         if deleted_report is None:
             raise HTTPException(status_code=404, detail="Report not found.")
-        return deleted_report
+        return {
+            "message": f"Report with id {report_id} deleted.",
+            "deleted_report": deleted_report
+        }
     except HTTPException:
         raise
     except Exception as error:
@@ -964,6 +982,10 @@ def delete_image(image_id: int):
     try:
         connection = get_connection()
         deleted_image = db.delete_image(connection, image_id)
-        return deleted_image
+        if deleted_image is None:
+            raise HTTPException(status_code=404, detail="Image not found.")
+        return {f"message: Image with {image_id} deleted."}
+    except HTTPException:
+        raise
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Something went wrong: {error}")

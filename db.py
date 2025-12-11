@@ -9,7 +9,7 @@ Each function execute queries, returns the result and handles exceptions when ne
 
 # Users
 def create_user(
-    connection, username, email, password, user_since, date_of_birth, phone_number
+    connection, username, email, password, date_of_birth, phone_number
 ):
     # open connection
     with connection:
@@ -17,14 +17,13 @@ def create_user(
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 """
-                INSERT INTO users (username, email, password, user_since, date_of_birth, phone_number) 
-                VALUES (%s, %s, %s, %s, %s, %s) 
-                RETURNING id;""",
-                (username, email, password, user_since, date_of_birth, phone_number),
+                INSERT INTO users (username, email, password, date_of_birth, phone_number) 
+                VALUES (%s, %s, %s, %s, %s) 
+                RETURNING *;""",
+                (username, email, password, date_of_birth, phone_number),
             )
-            # get id from dictionary
-            user_id = cursor.fetchone()["id"]
-        return user_id
+            new_user = cursor.fetchone()
+        return new_user
 
 
 def get_user_by_id(connection, user_id):
@@ -74,7 +73,7 @@ def get_user_by_username(connection, username):
 def get_all_users(connection):
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
-            cursor.execute("SELECT * FROM users")
+            cursor.execute("SELECT * FROM users;")
             all_users = cursor.fetchall()
         return all_users
 
@@ -147,7 +146,6 @@ def create_listing(
     listing_type,
     price,
     region,
-    status,
     description,
     image_url=None,
 ):
@@ -157,8 +155,8 @@ def create_listing(
             cursor.execute( # Run SQL ("Insert a new listing with these values")
                 """
                 INSERT INTO listings 
-                (user_id, category_id, title, listing_type, price, region, status, description, image_url)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) 
+                (user_id, category_id, title, listing_type, price, region, description, image_url)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s) 
                 RETURNING *;
                 """,
                 # RETURNING *: return the new row that was created
@@ -170,7 +168,6 @@ def create_listing(
                     listing_type,
                     price,
                     region,
-                    status,
                     description,
                     image_url,
                 ) # Sending all the values
@@ -219,7 +216,6 @@ def update_listing(
     listing_type=None,
     price=None,
     region=None,
-    status=None,
     description=None,
     image_url=None,
 ):
@@ -237,7 +233,6 @@ def update_listing(
                 listing_type = COALESCE(%s, listing_type),
                 price = COALESCE(%s, price),
                 region = COALESCE(%s, region),
-                status = COALESCE(%s, status),
                 description = COALESCE(%s, description),
                 image_url = COALESCE(%s, image_url)
                 WHERE id = %s 
@@ -249,7 +244,6 @@ def update_listing(
                     listing_type,
                     price,
                     region,
-                    status,
                     description,
                     image_url,
                     listing_id,
@@ -441,18 +435,18 @@ def delete_message(connection, message_id):
 
 # Payments
 def create_payment(
-    connection, transaction_id, listing_id, payment_method, payment_status, amount
+    connection, transaction_id, listing_id, payment_method, amount
 ):
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 """
                 INSERT INTO payments 
-                (transaction_id, listing_id, payment_method, payment_status, amount) 
-                VALUES (%s, %s, %s, %s, %s) 
+                (transaction_id, listing_id, payment_method, amount) 
+                VALUES (%s, %s, %s, %s) 
                 RETURNING *;
                 """,
-                (transaction_id, listing_id, payment_method, payment_status, amount)
+                (transaction_id, listing_id, payment_method, amount)
             )
             new_payment = cursor.fetchone()
     return new_payment
@@ -523,17 +517,35 @@ def request_refund(connection, payment_id):
     return refund_request
 
 
-# Bids
-def create_bid(connection, user_id, listing_id, bid_amount):
+def delete_payment(connection, payment_id):
     with connection:
         with connection.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(
                 """
-                INSERT INTO bids (user_id, listing_id, bid_amount)
+                DELETE 
+                FROM payments 
+                WHERE id = %s 
+                RETURNING id;
+                """,
+                (payment_id,)
+            )
+            deleted_payment = cursor.fetchone()
+        if deleted_payment is None:
+            raise ValueError(f"Payment with id {payment_id} not found.")
+    return deleted_payment
+
+
+# Bids
+def create_bid(connection, user_id, listing_id, amount):
+    with connection:
+        with connection.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                """
+                INSERT INTO bids (user_id, listing_id, amount)
                 VALUES (%s, %s, %s)
                 RETURNING *; 
                 """,
-                (user_id, listing_id, bid_amount)
+                (user_id, listing_id, amount)
             )
             new_bid = cursor.fetchone()
     return new_bid
@@ -581,7 +593,7 @@ def get_bids_for_listing(connection, listing_id):
                 SELECT * 
                 FROM bids 
                 WHERE listing_id = %s 
-                ORDER BY bid_amount DESC;
+                ORDER BY amount DESC;
                 """,
                 (listing_id,)
             )
@@ -604,7 +616,7 @@ def delete_bid(connection, bid_id):
             deleted_bid = cursor.fetchone()
         if deleted_bid is None:
             raise ValueError(f"Bid with id {bid_id} not found.")
-    return delete_bid
+    return deleted_bid
 
 
 # User_ratings
