@@ -68,7 +68,7 @@ def create_tables():
             price DECIMAL(10, 2) NOT NULL CHECK (price > 0),
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             region VARCHAR(255) NOT NULL,
-            status VARCHAR(255) NOT NULL CHECK (status IN ('active', 'sold', 'closed')),
+            status VARCHAR(255) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'sold', 'closed')),
             description TEXT NOT NULL
         );
     """
@@ -137,7 +137,7 @@ def create_tables():
             transaction_id BIGINT NOT NULL REFERENCES "transactions"(id), 
             listing_id BIGINT NOT NULL REFERENCES "listings"(id),     
             payment_method VARCHAR(50) NOT NULL,
-            payment_status VARCHAR(50) NOT NULL CHECK (payment_status IN ('pending', 'completed', 'failed', 'cancelled', 'refunded', 'refund_requested')),
+            payment_status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (payment_status IN ('pending', 'completed', 'failed', 'cancelled', 'refunded', 'refund_requested')),
             amount DECIMAL(10, 2) NOT NULL,
             paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
